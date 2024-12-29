@@ -7,7 +7,7 @@ exports.getAllChats = async (req, res, next) => {
     const users = await User.find({});
     return res.status(200).json(users);
   } catch (error) {
-    return res.status(400).json(error.message);
+    return res.status(400).json({ message: error.message });
   }
 };
 
@@ -17,12 +17,11 @@ exports.getData = async (req, res, next) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     return res.status(200).json(user);
   } catch (error) {
-    return res.status(500).json(error.message);
+    return res.status(500).json({ message: error.message });
   }
 };
 
 exports.sendMessage = async (req, res, next) => {
-  // console.log(req.params);
   try {
     const { message } = req.body;
     const { id: receiverId } = req.params;
@@ -37,6 +36,7 @@ exports.sendMessage = async (req, res, next) => {
         participants: [senderId, receiverId],
       });
     }
+
     const newMessage = new Message({
       senderId,
       receiverId,
@@ -44,14 +44,19 @@ exports.sendMessage = async (req, res, next) => {
     });
 
     if (newMessage) {
+      if (!Array.isArray(conversation.messages)) {
+        conversation.messages = [];
+      }
       conversation.messages.push(newMessage._id);
     }
+
     await Promise.all([conversation.save(), newMessage.save()]);
+
     return res
       .status(200)
       .json({ message: "Message Sent successfully", newMessage });
   } catch (error) {
-    return res.status(500).json({ message: error });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -60,17 +65,14 @@ exports.getUserChats = async (req, res, next) => {
   const senderId = req.user._id;
 
   try {
-    // Find the conversation between sender and receiver
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
-    }).populate("messages"); // Assuming 'messages' is a ref array
+    }).populate("messages");
 
-    // Check if the conversation exists
     if (!conversation || !conversation.messages.length) {
       return res.status(404).json({ message: "No messages found" });
     }
 
-    // Separate messages sent by sender and receiver
     const senderMessages = [];
     const receiverMessages = [];
 
@@ -82,15 +84,12 @@ exports.getUserChats = async (req, res, next) => {
       }
     });
 
-    // Send response
     return res.status(200).json({
       senderMessages,
       receiverMessages,
       conversation,
     });
   } catch (error) {
-    // Handle errors
-    // console.error(error);
     return res.status(500).json({ message: error.message });
   }
 };
