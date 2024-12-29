@@ -24,7 +24,17 @@ const httpServer = createServer(app);
 // Initialize Socket.IO server
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Replace with your frontend URL in production
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "https://mychatifyapp.netlify.app",
+      ]; // Update with your actual frontend URLs
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
   },
 });
