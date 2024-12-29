@@ -8,10 +8,11 @@ const { Server } = require("socket.io"); // Import Socket.IO
 const user = require("./routes/user");
 const admin = require("./routes/admin");
 const db = require("./database/db");
+const corsOptions = require("./config/cors");
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Routes
 app.use(user);
