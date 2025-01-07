@@ -93,3 +93,23 @@ exports.getUserChats = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+exports.getLoginUserData = async (req, res, next) => {
+  try {
+    return await res.status(200).json(req.user);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getOnlineUsers = async (req, res, next) => {
+  try {
+    const onlineUsers = await User.find({ isOnline: true }).select(
+      "name username isOnline"
+    );
+    res.status(200).json({ onlineUsers });
+  } catch (err) {
+    console.error("Error fetching online users:", err);
+    res.status(500).json({ error: "Failed to fetch online users" });
+  }
+};
