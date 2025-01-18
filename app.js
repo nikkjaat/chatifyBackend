@@ -19,11 +19,13 @@ app.use(
   express.static(path.join(__dirname, "uploads", "images"))
 );
 
+
 //Initialize Socket.IO
 InitializeSocketIO(server);
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 // Routes

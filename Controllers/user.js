@@ -1,6 +1,7 @@
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fileDeleteHandler = require("../utils/fileDelete");
 
 exports.postSignup = async (req, res, next) => {
   try {
@@ -135,4 +136,56 @@ exports.postLogin = async (req, res, next) => {
   res
     .status(200)
     .json({ success: true, message: "Login Successful", authToken });
+};
+
+exports.updateProfile = async (req, res) => {
+  // Extract fields from request body
+  const { name, number, email, username } = req.body;
+  console.log(email);
+
+  const loginUser = await User.findById(req.user._id);
+
+  if (req.file && loginUser.imageURL !== "") {
+    try {
+      await fileDeleteHandler(loginUser.imageURL);
+    } catch (error) {
+      console.error("Unable to delete file:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  try {
+    // Validate the input (can also use middleware with express-validator)
+
+    if (!name || name.length < 3 || name.length > 20) {
+      return res
+        .status(400)
+        .json({ message: "Name must be 3-20 characters long." });
+    }
+
+    if (!/^\d{10}$/.test(number)) {
+      return res.status(400).json({ message: "Phone number Invalid" });
+    }
+
+    // Find user and update
+    const updatedUser = await User.findByIdAndUpdate(req.user._id, {
+      name,
+      number,
+      email: email || "",
+      username,
+      imageURL: req.file?.path || loginUser.imageURL,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return updated user details
+    res
+      .status(200)
+      .json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

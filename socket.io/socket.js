@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const User = require("../model/user");
 
 let io;
 const socketUsers = {}; // To keep track of connected users by their ids
@@ -7,23 +8,24 @@ const InitializeSocketIO = (server) => {
   io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL, // React app's URL
-      methods: ["GET", "POST"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     },
   });
 
   io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    // console.log("A user connected:", socket.id);
 
     // Store the socket ID for the user
-    socket.on("register", (userId) => {
+    socket.on("register", async (userId) => {
       socketUsers[userId] = socket.id; // Store socket id with userId
-      console.log(`User ${userId} connected with socket ID ${socket.id}`);
+      // console.log(`User ${userId} connected with socket ID ${socket.id}`);
+      await User.findByIdAndUpdate(userId, { isOnline: true });
     });
 
     // Example message event
     socket.on("message", (data) => {
       const { senderId, receiverId, content } = data;
-      console.log(data);
+      // console.log(data);
       // Send the message to the receiver
       if (socketUsers[receiverId]) {
         io.to(socketUsers[receiverId]).emit("receive_message", {
