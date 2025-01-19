@@ -1,6 +1,13 @@
 const User = require("../model/user");
 const Message = require("../model/messages");
 const Conversation = require("../model/conversation");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 exports.getAllChats = async (req, res, next) => {
   try {
@@ -94,11 +101,32 @@ exports.getUserChats = async (req, res, next) => {
   }
 };
 
+// exports.getLoginUserData = async (req, res, next) => {
+//   try {
+//     return await res.status(200).json(req.user);
+//   } catch (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+
 exports.getLoginUserData = async (req, res, next) => {
   try {
-    return await res.status(200).json(req.user);
+    const { resources } = await cloudinary.search
+      .expression("folder:ChatifyData/profiles")
+      .sort_by("created_at", "desc")
+      .max_results(1)
+      .execute();
+
+    // Get only the first image if it exists
+    const latestImage = resources.length > 0 ? resources[0] : null;
+
+    res.status(200).json({
+      image: latestImage, // Send only the latest image instead of entire resources array
+      user: req.user,
+    });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("Error fetching images from Cloudinary:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
